@@ -141,6 +141,7 @@ export const NoteCard = React.memo(function NoteCard({
               styles.title,
               {
                 color: theme.text,
+                fontFamily: theme.fonts.bold,
                 fontSize: 16 + delta,
                 lineHeight: 21 + delta,
                 paddingRight: note.isPinned ? 18 : 0,
@@ -157,6 +158,7 @@ export const NoteCard = React.memo(function NoteCard({
               styles.content,
               {
                 color: theme.textSecondary,
+                fontFamily: theme.fonts.regular,
                 fontSize: 14 + delta,
                 lineHeight: 19 + delta,
                 marginTop: hasTitle ? 6 : 0,
@@ -167,7 +169,7 @@ export const NoteCard = React.memo(function NoteCard({
         )}
       </View>
       <View style={styles.footer}>
-        <Text style={[styles.date, { color: theme.textTertiary }]}>
+        <Text style={[styles.date, { color: theme.textTertiary, fontFamily: theme.fonts.regular }]}>
           {formatSmartDate(displayTimestamp)}
         </Text>
         {selectionMode && (

@@ -204,7 +204,7 @@ export default function FoldersScreen({ navigation }: Props) {
             styles.cardTitle,
             {
               color: theme.text,
-              fontFamily: isActive && !selectionMode ? fonts.bold : fonts.regular,
+              fontFamily: isActive && !selectionMode ? theme.fonts.bold : theme.fonts.regular,
             },
           ]}
         >
@@ -236,7 +236,7 @@ export default function FoldersScreen({ navigation }: Props) {
               styles.count,
               {
                 color: isActive ? theme.text : theme.textSecondary,
-                fontFamily: isActive ? fonts.bold : fonts.regular,
+                fontFamily: isActive ? theme.fonts.bold : theme.fonts.regular,
               },
             ]}
           >
@@ -266,7 +266,7 @@ export default function FoldersScreen({ navigation }: Props) {
           </TouchableOpacity>
         )}
 
-        <Text style={[styles.headerTitle, { color: theme.text }]}>
+        <Text style={[styles.headerTitle, { color: theme.text, fontFamily: theme.fonts.semiBold }]}>
           {selectionMode ? `${selectedIds.length} klasör seçildi` : 'Klasörler'}
         </Text>
 
@@ -310,7 +310,7 @@ export default function FoldersScreen({ navigation }: Props) {
           <View style={[styles.plusCircle, { backgroundColor: theme.accent }]}>
             <Ionicons name="add" size={22} color="#FFFFFF" />
           </View>
-          <Text style={[styles.newLabel, { color: theme.textSecondary }]}>Yeni klasör</Text>
+          <Text style={[styles.newLabel, { color: theme.textSecondary, fontFamily: theme.fonts.regular }]}>Yeni klasör</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -331,7 +331,7 @@ export default function FoldersScreen({ navigation }: Props) {
             onPress={() => setModalOpen(false)}
           />
           <View style={[styles.dialog, { backgroundColor: theme.surface }]}>
-            <Text style={[styles.dialogTitle, { color: theme.text }]}>
+            <Text style={[styles.dialogTitle, { color: theme.text, fontFamily: theme.fonts.bold }]}>
               {editingId ? 'Klasörü yeniden adlandır' : 'Yeni klasör'}
             </Text>
             <TextInput
@@ -346,6 +346,7 @@ export default function FoldersScreen({ navigation }: Props) {
                   color: theme.text,
                   backgroundColor: theme.background,
                   borderColor: theme.accent,
+                  fontFamily: theme.fonts.regular,
                 },
               ]}
               maxLength={40}
@@ -358,7 +359,7 @@ export default function FoldersScreen({ navigation }: Props) {
                 onPress={() => setModalOpen(false)}
                 style={[styles.dialogBtn, { backgroundColor: theme.pill }]}
               >
-                <Text style={[styles.dialogBtnText, { color: theme.textSecondary }]}>İptal</Text>
+                <Text style={[styles.dialogBtnText, { color: theme.textSecondary, fontFamily: theme.fonts.semiBold }]}>İptal</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={submitModal}
@@ -373,7 +374,7 @@ export default function FoldersScreen({ navigation }: Props) {
                 <Text
                   style={[
                     styles.dialogBtnText,
-                    { color: folderName.trim() ? '#FFFFFF' : theme.textTertiary },
+                    { color: folderName.trim() ? '#FFFFFF' : theme.textTertiary, fontFamily: theme.fonts.semiBold },
                   ]}
                 >
                   Tamam

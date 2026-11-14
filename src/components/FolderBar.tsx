@@ -25,8 +25,10 @@ export function FolderBar({ theme, folders, active, onChange, onManage }: Props)
           numberOfLines={1}
           style={[
             styles.pillText,
-            { color: selected ? theme.pillSelectedText : theme.textSecondary },
-            selected && { fontFamily: fonts.semiBold },
+            {
+              color: selected ? theme.pillSelectedText : theme.textSecondary,
+              fontFamily: selected ? theme.fonts.semiBold : theme.fonts.regular,
+            },
           ]}
         >
           {label}

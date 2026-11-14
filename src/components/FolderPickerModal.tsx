@@ -26,7 +26,7 @@ export function FolderPickerModal({ visible, theme, folders, currentFolderId, on
           size={20}
           color={theme.accent}
         />
-        <Text style={[styles.label, { color: theme.text }]} numberOfLines={1}>
+        <Text style={[styles.label, { color: theme.text, fontFamily: theme.fonts.regular }]} numberOfLines={1}>
           {label}
         </Text>
         {active && <Ionicons name="checkmark" size={20} color={theme.accent} />}
@@ -36,10 +36,10 @@ export function FolderPickerModal({ visible, theme, folders, currentFolderId, on
 
   return (
     <BottomSheet visible={visible} onClose={onClose} theme={theme}>
-      <Text style={[styles.title, { color: theme.text }]}>Şuraya taşı</Text>
+      <Text style={[styles.title, { color: theme.text, fontFamily: theme.fonts.bold }]}>Şuraya taşı</Text>
       <ScrollView keyboardShouldPersistTaps="handled">
         {folders.length === 0 ? (
-          <Text style={[styles.empty, { color: theme.textTertiary }]}>Henüz klasör oluşturulmadı</Text>
+          <Text style={[styles.empty, { color: theme.textTertiary, fontFamily: theme.fonts.regular }]}>Henüz klasör oluşturulmadı</Text>
         ) : (
           folders.map((f) => <Row key={f.id} label={f.name} id={f.id} />)
         )}

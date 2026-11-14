@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StrokeData } from '../utils/blocks';
-import { fonts } from '../theme';
+import { fonts, useTheme } from '../theme';
 
 interface Props {
   visible: boolean;
@@ -36,6 +36,7 @@ const COLORS = [
 const WIDTHS = [3, 6, 11];
 
 export function DrawingModal({ visible, initialStrokes, onSave, onClose }: Props) {
+  const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
 
@@ -194,7 +195,7 @@ export function DrawingModal({ visible, initialStrokes, onSave, onClose }: Props
         >
           { strokes.length === 0 && !currentPath && (
             <View pointerEvents="none" style={styles.hintWrap}>
-              <Text style={styles.hintText}>Parmağınızla buraya çizin</Text>
+              <Text style={[styles.hintText, { fontFamily: theme.fonts.regular }]}>Parmağınızla buraya çizin</Text>
             </View>
           )}
           <Svg style={StyleSheet.absoluteFill}>

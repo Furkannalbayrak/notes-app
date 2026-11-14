@@ -50,7 +50,7 @@ export function FolderManagerModal({ visible, theme, folders, onAdd, onRename, o
 
   return (
     <BottomSheet visible={visible} onClose={close} theme={theme}>
-      <Text style={[styles.title, { color: theme.text }]}>Klasörler</Text>
+      <Text style={[styles.title, { color: theme.text, fontFamily: theme.fonts.bold }]}>Klasörler</Text>
 
       <View style={[styles.inputRow, { backgroundColor: theme.background }]}>
         <Ionicons name="add" size={20} color={theme.accent} />
@@ -59,19 +59,19 @@ export function FolderManagerModal({ visible, theme, folders, onAdd, onRename, o
           onChangeText={setNewName}
           placeholder="Yeni klasör adı"
           placeholderTextColor={theme.textTertiary}
-          style={[styles.input, { color: theme.text }]}
+          style={[styles.input, { color: theme.text, fontFamily: theme.fonts.regular }]}
           onSubmitEditing={submitNew}
           returnKeyType="done"
           maxLength={40}
         />
         <TouchableOpacity onPress={submitNew} disabled={!newName.trim()} hitSlop={8}>
-          <Text style={[styles.add, { color: newName.trim() ? theme.accent : theme.textTertiary }]}>Ekle</Text>
+          <Text style={[styles.add, { color: newName.trim() ? theme.accent : theme.textTertiary, fontFamily: theme.fonts.semiBold }]}>Ekle</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView keyboardShouldPersistTaps="handled" style={{ marginTop: 6 }}>
         {folders.length === 0 && (
-          <Text style={[styles.empty, { color: theme.textTertiary }]}>Henüz klasör yok</Text>
+          <Text style={[styles.empty, { color: theme.textTertiary, fontFamily: theme.fonts.regular }]}>Henüz klasör yok</Text>
         )}
         {folders.map((f) => (
           <View key={f.id} style={styles.row}>
@@ -83,7 +83,7 @@ export function FolderManagerModal({ visible, theme, folders, onAdd, onRename, o
                   value={editName}
                   onChangeText={setEditName}
                   onSubmitEditing={submitEdit}
-                  style={[styles.editInput, { color: theme.text, borderColor: theme.accent }]}
+                  style={[styles.editInput, { color: theme.text, borderColor: theme.accent, fontFamily: theme.fonts.regular }]}
                   maxLength={40}
                   returnKeyType="done"
                 />
@@ -96,7 +96,7 @@ export function FolderManagerModal({ visible, theme, folders, onAdd, onRename, o
               </>
             ) : (
               <>
-                <Text style={[styles.name, { color: theme.text }]} numberOfLines={1}>
+                <Text style={[styles.name, { color: theme.text, fontFamily: theme.fonts.regular }]} numberOfLines={1}>
                   {f.name}
                 </Text>
                 <TouchableOpacity

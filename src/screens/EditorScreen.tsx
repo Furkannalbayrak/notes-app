@@ -31,7 +31,7 @@ import * as ImagePicker from 'expo-image-picker';
 import Svg, { Path } from 'react-native-svg';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
-import { fonts } from '../theme';
+import { fonts, Theme } from '../theme';
 import { RootStackParamList } from '../types';
 import { formatFullDate } from '../utils/date';
 import { uid } from '../utils/id';
@@ -920,7 +920,7 @@ export default function EditorScreen({ navigation, route }: Props) {
               onChangeText={onChangeTitle}
               placeholder="Başlık"
               placeholderTextColor={theme.textTertiary}
-              style={[styles.title, { color: theme.text }]}
+              style={[styles.title, { color: theme.text, fontFamily: theme.fonts.bold }]}
               onFocus={() => setEditing(true)}
               multiline
               submitBehavior="submit"
@@ -933,7 +933,7 @@ export default function EditorScreen({ navigation, route }: Props) {
             />
 
             {/* Tarih & Karakter Sayısı */}
-            <Text style={[styles.meta, { color: theme.textTertiary }]}>
+            <Text style={[styles.meta, { color: theme.textTertiary, fontFamily: theme.fonts.regular }]}>
               {formatFullDate(ts)}
               {'  |  '}
               {charCount} karakter
@@ -993,6 +993,7 @@ export default function EditorScreen({ navigation, route }: Props) {
                         {
                           color: block.checked ? theme.textSecondary : theme.text,
                           fontSize: effectiveFontSize,
+                          fontFamily: theme.fonts.regular,
                         },
                       ]}
                       selectionColor={theme.accent}
@@ -1118,6 +1119,7 @@ export default function EditorScreen({ navigation, route }: Props) {
                         styles.fontChipText,
                         {
                           color: isSelected ? '#FFFFFF' : theme.text,
+                          fontFamily: theme.fonts.semiBold,
                           fontSize: preset === 'sm' ? 12.5 : preset === 'md' ? 14 : preset === 'lg' ? 15.5 : 17,
                         },
                       ]}
@@ -1202,14 +1204,14 @@ export default function EditorScreen({ navigation, route }: Props) {
           onClose={() => setPhotoSheetOpen(false)}
           theme={theme}
         >
-          <Text style={[styles.sheetTitle, { color: theme.text }]}>Fotoğraf ekle</Text>
+          <Text style={[styles.sheetTitle, { color: theme.text, fontFamily: theme.fonts.bold }]}>Fotoğraf ekle</Text>
           <TouchableOpacity style={styles.sheetRow} activeOpacity={0.65} onPress={takePhotoWithCamera}>
             <Ionicons name="camera-outline" size={22} color={theme.accent} />
-            <Text style={[styles.sheetLabel, { color: theme.text }]}>Kamerayla fotoğraf çek</Text>
+            <Text style={[styles.sheetLabel, { color: theme.text, fontFamily: theme.fonts.regular }]}>Kamerayla fotoğraf çek</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.sheetRow} activeOpacity={0.65} onPress={pickFromGallery}>
             <Ionicons name="images-outline" size={22} color={theme.accent} />
-            <Text style={[styles.sheetLabel, { color: theme.text }]}>Galeriden fotoğraf seç</Text>
+            <Text style={[styles.sheetLabel, { color: theme.text, fontFamily: theme.fonts.regular }]}>Galeriden fotoğraf seç</Text>
           </TouchableOpacity>
         </BottomSheet>
 
@@ -1247,6 +1249,7 @@ export default function EditorScreen({ navigation, route }: Props) {
                 icon={<Ionicons name="folder-open-outline" size={20} color={theme.text} />}
                 label="Şuraya taşı"
                 color={theme.text}
+                theme={theme}
                 onPress={() => {
                   setMenuOpen(false);
                   setPickerOpen(true);
@@ -1262,12 +1265,14 @@ export default function EditorScreen({ navigation, route }: Props) {
                 }
                 label={isPinned ? 'İğnelemeyi kaldır' : 'İğnele'}
                 color={theme.text}
+                theme={theme}
                 onPress={togglePin}
               />
               <MenuItem
                 icon={<Ionicons name="trash-outline" size={20} color={theme.danger} />}
                 label="Sil"
                 color={theme.danger}
+                theme={theme}
                 onPress={confirmDelete}
               />
             </View>
@@ -1291,17 +1296,19 @@ function MenuItem({
   icon,
   label,
   color,
+  theme,
   onPress,
 }: {
   icon: React.ReactNode;
   label: string;
   color: string;
+  theme: Theme;
   onPress: () => void;
 }) {
   return (
     <TouchableOpacity style={styles.menuItem} activeOpacity={0.6} onPress={onPress}>
       {icon}
-      <Text style={[styles.menuLabel, { color }]}>{label}</Text>
+      <Text style={[styles.menuLabel, { color, fontFamily: theme.fonts.regular }]}>{label}</Text>
     </TouchableOpacity>
   );
 }
