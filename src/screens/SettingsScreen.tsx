@@ -18,11 +18,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { Theme, fonts } from '../theme';
-import { AppFontSize, LayoutMode, RootStackParamList, SortOrder } from '../types';
+import { FONT_CONFIGS } from '../theme/fonts';
+import { AppFontFamily, AppFontSize, LayoutMode, RootStackParamList, SortOrder } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
-type PickerType = 'fontSize' | 'sortBy' | 'layoutMode' | null;
+type PickerType = 'fontSize' | 'fontFamily' | 'sortBy' | 'layoutMode' | null;
 
 const FONT_SIZE_LABELS: Record<AppFontSize, string> = {
   small: 'Küçük',
@@ -54,7 +55,7 @@ function Section({
 }) {
   return (
     <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>{title}</Text>
+      <Text style={[styles.sectionTitle, { color: theme.textTertiary, fontFamily: theme.fonts.regular }]}>{title}</Text>
       <View>{children}</View>
       {showDivider && <View style={[styles.divider, { backgroundColor: theme.border }]} />}
     </View>
@@ -74,9 +75,9 @@ function StyleRow({
 }) {
   return (
     <TouchableOpacity activeOpacity={0.6} onPress={onPress} style={styles.styleRow}>
-      <Text style={[styles.rowLabel, { color: theme.text }]}>{label}</Text>
+      <Text style={[styles.rowLabel, { color: theme.text, fontFamily: theme.fonts.semiBold }]}>{label}</Text>
       <View style={styles.rowRight}>
-        <Text style={[styles.rowValue, { color: theme.textSecondary }]}>{valueText}</Text>
+        <Text style={[styles.rowValue, { color: theme.textSecondary, fontFamily: theme.fonts.regular }]}>{valueText}</Text>
         <Ionicons name="chevron-expand" size={17} color={theme.textTertiary} />
       </View>
     </TouchableOpacity>
@@ -90,11 +91,13 @@ export default function SettingsScreen({ navigation }: Props) {
 
   const mode = useStore((s) => s.theme);
   const fontSize = useStore((s) => s.fontSize);
+  const fontFamily = useStore((s) => s.fontFamily);
   const sortBy = useStore((s) => s.sortBy);
   const layoutMode = useStore((s) => s.layoutMode);
 
   const setTheme = useStore((s) => s.setTheme);
   const setFontSize = useStore((s) => s.setFontSize);
+  const setFontFamily = useStore((s) => s.setFontFamily);
   const setSortBy = useStore((s) => s.setSortBy);
   const setLayoutMode = useStore((s) => s.setLayoutMode);
 
@@ -141,6 +144,56 @@ export default function SettingsScreen({ navigation }: Props) {
   }));
 
   const renderPickerContent = () => {
+    if (activePicker === 'fontFamily') {
+      const options: AppFontFamily[] = [
+        'inter',
+        'roboto',
+        'poppins',
+        'nunito',
+        'lora',
+        'playfair',
+        'caveat',
+        'jetbrains',
+      ];
+      return (
+        <>
+          <Text style={[styles.modalTitle, { color: theme.text, fontFamily: theme.fonts.bold }]}>Yazı tipi</Text>
+          {options.map((opt) => {
+            const cfg = FONT_CONFIGS[opt];
+            const selected = fontFamily === opt;
+            return (
+              <TouchableOpacity
+                key={opt}
+                activeOpacity={0.65}
+                onPress={() => {
+                  setFontFamily(opt);
+                  setActivePicker(null);
+                }}
+                style={[
+                  styles.optionRow,
+                  selected && { backgroundColor: isDark ? 'rgba(245,166,35,0.14)' : 'rgba(245,166,35,0.12)' },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.optionLabel,
+                    {
+                      color: selected ? theme.accent : theme.text,
+                      fontFamily: cfg.regular,
+                      fontSize: opt === 'caveat' ? 18.5 : 15.5,
+                    },
+                  ]}
+                >
+                  {cfg.label}
+                </Text>
+                {selected && <Ionicons name="checkmark" size={20} color={theme.accent} />}
+              </TouchableOpacity>
+            );
+          })}
+        </>
+      );
+    }
+
     if (activePicker === 'fontSize') {
       const options: AppFontSize[] = ['small', 'medium', 'large', 'huge'];
       return (
@@ -266,9 +319,15 @@ export default function SettingsScreen({ navigation }: Props) {
         </View>
 
         <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 24 }]}>
-          <Text style={[styles.bigTitle, { color: theme.text }]}>Notlar</Text>
+          <Text style={[styles.bigTitle, { color: theme.text, fontFamily: theme.fonts.bold }]}>Notlar</Text>
 
           <Section title="Stil" theme={theme}>
+            <StyleRow
+              label="Yazı tipi"
+              valueText={FONT_CONFIGS[fontFamily]?.label ?? 'Inter (Varsayılan)'}
+              theme={theme}
+              onPress={() => setActivePicker('fontFamily')}
+            />
             <StyleRow
               label="Yazı tipi boyutu"
               valueText={FONT_SIZE_LABELS[fontSize]}

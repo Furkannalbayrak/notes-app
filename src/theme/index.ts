@@ -1,4 +1,6 @@
-import { ThemeMode } from '../types';
+import { AppFontFamily, ThemeMode } from '../types';
+import { FontConfig, FONT_CONFIGS } from './fonts';
+import { useStore } from '../store/useStore';
 
 export interface Theme {
   mode: ThemeMode;
@@ -15,10 +17,11 @@ export interface Theme {
   overlay: string;
   danger: string;
   checkEmpty: string;
+  fonts: FontConfig;
 }
 
-export const darkTheme: Theme = {
-  mode: 'dark',
+export const darkThemeColors = {
+  mode: 'dark' as ThemeMode,
   background: '#000000',
   surface: '#1C1C1E',
   pill: '#1C1C1E',
@@ -34,8 +37,8 @@ export const darkTheme: Theme = {
   checkEmpty: '#48484A',
 };
 
-export const lightTheme: Theme = {
-  mode: 'light',
+export const lightThemeColors = {
+  mode: 'light' as ThemeMode,
   background: '#F2F2F7',
   surface: '#FFFFFF',
   pill: '#E5E5EA',
@@ -51,12 +54,34 @@ export const lightTheme: Theme = {
   checkEmpty: '#C7C7CC',
 };
 
-export const getTheme = (mode: ThemeMode): Theme => (mode === 'dark' ? darkTheme : lightTheme);
+export const getTheme = (mode: ThemeMode, fontFamily: AppFontFamily = 'inter'): Theme => {
+  const base = mode === 'dark' ? darkThemeColors : lightThemeColors;
+  const fontCfg = FONT_CONFIGS[fontFamily] ?? FONT_CONFIGS.inter;
+  return {
+    ...base,
+    fonts: fontCfg,
+  };
+};
+
+export const darkTheme: Theme = getTheme('dark', 'inter');
+export const lightTheme: Theme = getTheme('light', 'inter');
 
 export const fonts = {
-  regular: 'Inter_400Regular',
-  semiBold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
-} as const;
+  get regular() {
+    const ff = useStore.getState?.()?.fontFamily ?? 'inter';
+    return (FONT_CONFIGS[ff] ?? FONT_CONFIGS.inter).regular;
+  },
+  get semiBold() {
+    const ff = useStore.getState?.()?.fontFamily ?? 'inter';
+    return (FONT_CONFIGS[ff] ?? FONT_CONFIGS.inter).semiBold;
+  },
+  get bold() {
+    const ff = useStore.getState?.()?.fontFamily ?? 'inter';
+    return (FONT_CONFIGS[ff] ?? FONT_CONFIGS.inter).bold;
+  },
+};
 
 export const FAB_COLOR = '#FFB300';
+
+export { useTheme } from './useTheme';
+
