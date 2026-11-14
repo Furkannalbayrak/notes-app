@@ -8,7 +8,8 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import * as SystemUI from 'expo-system-ui';
 import * as NavigationBar from 'expo-navigation-bar';
-import { useFonts, Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
+import { useFonts } from 'expo-font';
+import { ALL_APP_FONTS } from './src/theme/fonts';
 import { useStore } from './src/store/useStore';
 import { getTheme } from './src/theme';
 import { RootStackParamList } from './src/types';
@@ -16,6 +17,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import EditorScreen from './src/screens/EditorScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import FoldersScreen from './src/screens/FoldersScreen';
+import CalendarScreen from './src/screens/CalendarScreen';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 SystemUI.setBackgroundColorAsync('#000000').catch(() => {});
@@ -23,10 +25,11 @@ SystemUI.setBackgroundColorAsync('#000000').catch(() => {});
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
-  const [fontsLoaded] = useFonts({ Inter_400Regular, Inter_600SemiBold, Inter_700Bold });
+  const [fontsLoaded] = useFonts(ALL_APP_FONTS);
   const hydrated = useStore((s) => s.hydrated);
   const mode = useStore((s) => s.theme);
-  const theme = getTheme(mode);
+  const fontFamily = useStore((s) => s.fontFamily);
+  const theme = getTheme(mode, fontFamily);
   const ready = fontsLoaded && hydrated;
 
   useEffect(() => {
@@ -94,6 +97,15 @@ export default function App() {
             <Stack.Screen
               name="Folders"
               component={FoldersScreen}
+              options={{
+                animation: 'none',
+                presentation: 'transparentModal',
+                contentStyle: { backgroundColor: 'transparent' },
+              }}
+            />
+            <Stack.Screen
+              name="Calendar"
+              component={CalendarScreen}
               options={{
                 animation: 'none',
                 presentation: 'transparentModal',

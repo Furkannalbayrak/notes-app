@@ -5,6 +5,15 @@ export interface Folder {
   orderIndex: number;
 }
 
+export interface CalendarNote {
+  id: string;
+  date: string; // 'YYYY-MM-DD'
+  title: string;
+  content: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface Note {
   id: string;
   title: string;
@@ -19,6 +28,16 @@ export interface Note {
 export type ThemeMode = 'dark' | 'light';
 
 export type AppFontSize = 'small' | 'medium' | 'large' | 'huge';
+
+export type AppFontFamily =
+  | 'inter'
+  | 'roboto'
+  | 'poppins'
+  | 'nunito'
+  | 'lora'
+  | 'playfair'
+  | 'caveat'
+  | 'jetbrains';
 
 export type SortOrder = 'updatedAt' | 'createdAt';
 
@@ -38,4 +57,5 @@ export type RootStackParamList = {
   };
   Settings: undefined;
   Folders: undefined;
+  Calendar: undefined;
 };

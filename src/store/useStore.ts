@@ -1,14 +1,16 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppFontSize, Folder, FolderFilter, LayoutMode, Note, SortOrder, ThemeMode } from '../types';
+import { AppFontFamily, AppFontSize, CalendarNote, Folder, FolderFilter, LayoutMode, Note, SortOrder, ThemeMode } from '../types';
 import { uid } from '../utils/id';
 
 interface State {
   folders: Folder[];
   notes: Note[];
+  calendarNotes: CalendarNote[];
   theme: ThemeMode;
   fontSize: AppFontSize;
+  fontFamily: AppFontFamily;
   sortBy: SortOrder;
   layoutMode: LayoutMode;
   activeFilter: FolderFilter;
@@ -16,6 +18,7 @@ interface State {
 
   setTheme: (mode: ThemeMode) => void;
   setFontSize: (size: AppFontSize) => void;
+  setFontFamily: (fontFamily: AppFontFamily) => void;
   setSortBy: (sortBy: SortOrder) => void;
   setLayoutMode: (layoutMode: LayoutMode) => void;
   setActiveFilter: (filter: FolderFilter) => void;
@@ -32,6 +35,10 @@ interface State {
   moveNotes: (ids: string[], folderId: string | null) => void;
   /** Görünen notların yeni sırası (id listesi). Sabitli / sabitsiz gruplar kendi içinde yeniden sıralanır. */
   reorderNotes: (orderedIds: string[]) => void;
+
+  createCalendarNote: (data: { date: string; title: string; content: string }) => string;
+  updateCalendarNote: (id: string, patch: { title?: string; content?: string }) => void;
+  deleteCalendarNote: (id: string) => void;
 }
 
 export const useStore = create<State>()(
@@ -39,8 +46,10 @@ export const useStore = create<State>()(
     (set, get) => ({
       folders: [],
       notes: [],
+      calendarNotes: [],
       theme: 'dark',
       fontSize: 'medium',
+      fontFamily: 'inter',
       sortBy: 'updatedAt',
       layoutMode: 'grid',
       activeFilter: 'all',
@@ -48,6 +57,7 @@ export const useStore = create<State>()(
 
       setTheme: (mode) => set({ theme: mode }),
       setFontSize: (fontSize) => set({ fontSize }),
+      setFontFamily: (fontFamily) => set({ fontFamily }),
       setSortBy: (sortBy) => {
         const { notes } = get();
         const sorted = [...notes].sort((a, b) => {
@@ -164,6 +174,41 @@ export const useStore = create<State>()(
         }
         set({ notes: notes.map((n) => (next.has(n.id) ? { ...n, orderIndex: next.get(n.id)! } : n)) });
       },
+
+      createCalendarNote: ({ date, title, content }) => {
+        const id = uid();
+        const now = Date.now();
+        const newNote: CalendarNote = {
+          id,
+          date,
+          title: title.trim(),
+          content: content.trim(),
+          createdAt: now,
+          updatedAt: now,
+        };
+        set({ calendarNotes: [newNote, ...get().calendarNotes] });
+        return id;
+      },
+
+      updateCalendarNote: (id, patch) => {
+        set({
+          calendarNotes: get().calendarNotes.map((n) => {
+            if (n.id !== id) return n;
+            return {
+              ...n,
+              title: patch.title !== undefined ? patch.title.trim() : n.title,
+              content: patch.content !== undefined ? patch.content.trim() : n.content,
+              updatedAt: Date.now(),
+            };
+          }),
+        });
+      },
+
+      deleteCalendarNote: (id) => {
+        set({
+          calendarNotes: get().calendarNotes.filter((n) => n.id !== id),
+        });
+      },
     }),
     {
       name: 'notes-app-storage-v1',
@@ -171,8 +216,10 @@ export const useStore = create<State>()(
       partialize: (s) => ({
         folders: s.folders,
         notes: s.notes,
+        calendarNotes: s.calendarNotes,
         theme: s.theme,
         fontSize: s.fontSize,
+        fontFamily: s.fontFamily,
         sortBy: s.sortBy,
         layoutMode: s.layoutMode,
       }),

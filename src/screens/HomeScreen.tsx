@@ -15,7 +15,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useStore, sortNotes } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
-import { FAB_COLOR, fonts } from '../theme';
+import { FAB_COLOR, fonts, Theme } from '../theme';
 import { RootStackParamList } from '../types';
 import { FolderBar } from '../components/FolderBar';
 import { DraggableGrid } from '../components/DraggableGrid';
@@ -163,7 +163,7 @@ export default function HomeScreen({ navigation }: Props) {
           <TouchableOpacity onPress={() => setSelected([])} hitSlop={10} style={styles.headerBtn}>
             <Ionicons name="close" size={26} color={theme.text} />
           </TouchableOpacity>
-          <Text style={[styles.selTitle, { color: theme.text }]}>{selected.length} öge seçildi</Text>
+          <Text style={[styles.selTitle, { color: theme.text, fontFamily: theme.fonts.semiBold }]}>{selected.length} öge seçildi</Text>
           <TouchableOpacity
             onPress={() => setSelected(allSelected ? [] : visible.map((n) => n.id))}
             hitSlop={10}
@@ -188,7 +188,7 @@ export default function HomeScreen({ navigation }: Props) {
               onBlur={() => setSearchFocused(false)}
               placeholder="Notlarda ara"
               placeholderTextColor={theme.textSecondary}
-              style={[styles.searchInput, { color: theme.text }]}
+              style={[styles.searchInput, { color: theme.text, fontFamily: theme.fonts.regular }]}
               returnKeyType="search"
               selectionColor={theme.accent}
             />
@@ -205,16 +205,25 @@ export default function HomeScreen({ navigation }: Props) {
 
           {searchActive ? (
             <TouchableOpacity onPress={cancelSearch} hitSlop={8} style={styles.cancelBtn}>
-              <Text style={styles.cancelText}>İptal</Text>
+              <Text style={[styles.cancelText, { fontFamily: theme.fonts.semiBold }]}>İptal</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Settings')}
-              hitSlop={10}
-              style={styles.headerBtn}
-            >
-              <Ionicons name="settings-outline" size={24} color={theme.text} />
-            </TouchableOpacity>
+            <View style={styles.headerRightBtns}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Calendar')}
+                hitSlop={10}
+                style={styles.headerBtn}
+              >
+                <Ionicons name="calendar-outline" size={23} color={theme.text} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Settings')}
+                hitSlop={10}
+                style={styles.headerBtn}
+              >
+                <Ionicons name="settings-outline" size={24} color={theme.text} />
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       )}
@@ -236,7 +245,7 @@ export default function HomeScreen({ navigation }: Props) {
       {visible.length === 0 ? (
         <View style={styles.empty}>
           <Ionicons name="document-text-outline" size={44} color={theme.textTertiary} />
-          <Text style={[styles.emptyText, { color: theme.textTertiary }]}>
+          <Text style={[styles.emptyText, { color: theme.textTertiary, fontFamily: theme.fonts.regular }]}>
             {searchQuery.trim() ? 'Eşleşen not bulunamadı' : 'Burada henüz not yok'}
           </Text>
         </View>
@@ -291,18 +300,21 @@ export default function HomeScreen({ navigation }: Props) {
             }
             label={allPinned ? 'İğnelemeyi kaldır' : 'İğnele'}
             color={theme.text}
+            theme={theme}
             onPress={doPin}
           />
           <ActionButton
             icon={<Ionicons name="folder-open-outline" size={23} color={theme.text} />}
             label="Şuraya taşı"
             color={theme.text}
+            theme={theme}
             onPress={() => setPickerOpen(true)}
           />
           <ActionButton
             icon={<Ionicons name="trash-outline" size={23} color={theme.text} />}
             label="Sil"
             color={theme.text}
+            theme={theme}
             onPress={doDelete}
           />
         </View>
@@ -331,17 +343,19 @@ function ActionButton({
   icon,
   label,
   color,
+  theme,
   onPress,
 }: {
   icon: React.ReactNode;
   label: string;
   color: string;
+  theme: Theme;
   onPress: () => void;
 }) {
   return (
     <TouchableOpacity style={styles.action} activeOpacity={0.6} onPress={onPress}>
       {icon}
-      <Text style={[styles.actionLabel, { color }]} numberOfLines={1}>
+      <Text style={[styles.actionLabel, { color, fontFamily: theme.fonts.regular }]} numberOfLines={1}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -399,6 +413,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     fontSize: 15.5,
     color: '#2E7CF6',
+  },
+  headerRightBtns: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
   },
   headerBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   selTitle: { fontFamily: fonts.semiBold, fontSize: 17 },
