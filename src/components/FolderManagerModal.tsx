@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Folder } from '../types';
 import { Theme, fonts } from '../theme';
 import { BottomSheet } from './BottomSheet';
+import { showAlert } from './ConfirmModal';
 
 interface Props {
   visible: boolean;
@@ -33,7 +34,7 @@ export function FolderManagerModal({ visible, theme, folders, onAdd, onRename, o
   };
 
   const confirmDelete = (f: Folder) =>
-    Alert.alert(
+    showAlert(
       'Klasörü sil',
       `"${f.name}" klasörü silinecek. İçindeki notlar silinmez, "Kategorilenmemiş" olarak kalır.`,
       [

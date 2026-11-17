@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   AppState,
   AppStateStatus,
   Image,
@@ -17,6 +16,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { showAlert } from '../components/ConfirmModal';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -52,6 +52,7 @@ import {
 import { FolderPickerModal } from '../components/FolderPickerModal';
 import { DrawingModal } from '../components/DrawingModal';
 import { BottomSheet } from '../components/BottomSheet';
+import { setFoldersMoveCallback } from './FoldersScreen';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Editor'>;
 
@@ -691,7 +692,7 @@ export default function EditorScreen({ navigation, route }: Props) {
     setPhotoSheetOpen(false);
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('İzin Gerekli', 'Galeriden fotoğraf seçmek için izin vermeniz gerekiyor.');
+      showAlert('İzin Gerekli', 'Galeriden fotoğraf seçmek için izin vermeniz gerekiyor.');
       return;
     }
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -714,7 +715,7 @@ export default function EditorScreen({ navigation, route }: Props) {
     setPhotoSheetOpen(false);
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('İzin Gerekli', 'Kamerayı kullanmak için izin vermeniz gerekiyor.');
+      showAlert('İzin Gerekli', 'Kamerayı kullanmak için izin vermeniz gerekiyor.');
       return;
     }
     const res = await ImagePicker.launchCameraAsync({
@@ -841,7 +842,7 @@ export default function EditorScreen({ navigation, route }: Props) {
 
   const confirmDelete = () => {
     setMenuOpen(false);
-    Alert.alert('Notu sil', 'Bu not kalıcı olarak silinecek.', [
+    showAlert('Notu sil', 'Bu not kalıcı olarak silinecek.', [
       { text: 'Vazgeç', style: 'cancel' },
       {
         text: 'Sil',
@@ -1196,6 +1197,9 @@ export default function EditorScreen({ navigation, route }: Props) {
               </TouchableOpacity>
             </View>
           )}
+          {insets.bottom > 0 && (
+            <View style={{ height: insets.bottom, backgroundColor: theme.navBar }} />
+          )}
         </KeyboardAvoidingView>
 
         {/* Fotoğraf Seçim Menüsü (Galeri veya Kamera) */}
@@ -1237,6 +1241,7 @@ export default function EditorScreen({ navigation, route }: Props) {
           animationType="fade"
           onRequestClose={() => setMenuOpen(false)}
           statusBarTranslucent
+          navigationBarTranslucent
         >
           <Pressable style={styles.menuBackdrop} onPress={() => setMenuOpen(false)}>
             <View
@@ -1252,7 +1257,12 @@ export default function EditorScreen({ navigation, route }: Props) {
                 theme={theme}
                 onPress={() => {
                   setMenuOpen(false);
-                  setPickerOpen(true);
+                  setFoldersMoveCallback((folderId) => {
+                    moveTo(folderId);
+                  });
+                  navigation.navigate('Folders', {
+                    moveNoteIds: noteIdRef.current ? [noteIdRef.current] : [],
+                  });
                 }}
               />
               <MenuItem

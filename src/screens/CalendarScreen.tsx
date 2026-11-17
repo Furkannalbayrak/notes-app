@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   BackHandler,
   KeyboardAvoidingView,
   Modal,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -13,6 +13,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { showAlert } from '../components/ConfirmModal';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -183,7 +184,7 @@ export default function CalendarScreen({ navigation }: Props) {
 
   // Not sil
   const confirmDelete = (noteId: string) => {
-    Alert.alert('Notu Sil', 'Bu takvim notu silinecek. Emin misiniz?', [
+    showAlert('Notu Sil', 'Bu takvim notu silinecek. Emin misiniz?', [
       { text: 'Vazgeç', style: 'cancel' },
       {
         text: 'Sil',
@@ -382,17 +383,12 @@ export default function CalendarScreen({ navigation }: Props) {
             style={styles.notesList}
             contentContainerStyle={[
               styles.notesListContent,
-              { paddingBottom: Math.max(insets.bottom, 16) + 16 },
+              { paddingBottom: 24 },
             ]}
             keyboardShouldPersistTaps="handled"
           >
             {selectedDateNotes.length === 0 ? (
-              <View style={styles.emptyDayNotes}>
-                <Ionicons name="create-outline" size={38} color={theme.textTertiary} />
-                <Text style={[styles.emptyDayText, { color: theme.textTertiary, fontFamily: theme.fonts.regular }]}>
-                  Bu gün için henüz not yazılmadı.
-                </Text>
-              </View>
+              null
             ) : (
               selectedDateNotes.map((note) => (
                 <TouchableOpacity
@@ -475,6 +471,9 @@ export default function CalendarScreen({ navigation }: Props) {
             )}
           </ScrollView>
         </View>
+        {insets.bottom > 0 && (
+          <View style={{ height: insets.bottom, backgroundColor: theme.navBar }} />
+        )}
       </Animated.View>
 
       {/* Not Ekleme / Düzenleme Modalı */}
@@ -484,6 +483,7 @@ export default function CalendarScreen({ navigation }: Props) {
         animationType="slide"
         onRequestClose={() => setEditorVisible(false)}
         statusBarTranslucent
+        navigationBarTranslucent
       >
         <KeyboardAvoidingView
           style={styles.editorModalRoot}
@@ -492,7 +492,7 @@ export default function CalendarScreen({ navigation }: Props) {
           <View
             style={[
               styles.editorContainer,
-              { backgroundColor: theme.surface, paddingTop: Math.max(insets.top, 20) },
+              { backgroundColor: theme.surface, paddingTop: Math.max(insets.top, StatusBar.currentHeight ?? 0, 24) + 20 },
             ]}
           >
             {/* Modal Üst Barı */}
@@ -560,6 +560,9 @@ export default function CalendarScreen({ navigation }: Props) {
               selectionColor={theme.accent}
             />
           </View>
+          {insets.bottom > 0 && (
+            <View style={{ height: insets.bottom, backgroundColor: theme.navBar }} />
+          )}
         </KeyboardAvoidingView>
       </Modal>
     </View>

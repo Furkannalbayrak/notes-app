@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   BackHandler,
   Keyboard,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { showAlert } from '../components/ConfirmModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -19,8 +19,8 @@ import { FAB_COLOR, fonts, Theme } from '../theme';
 import { RootStackParamList } from '../types';
 import { FolderBar } from '../components/FolderBar';
 import { DraggableGrid } from '../components/DraggableGrid';
-import { FolderPickerModal } from '../components/FolderPickerModal';
 import { getNotePlainText } from '../utils/blocks';
+import { setFoldersMoveCallback } from './FoldersScreen';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -42,10 +42,25 @@ export default function HomeScreen({ navigation }: Props) {
   const reorderNotes = useStore((s) => s.reorderNotes);
 
   const [selected, setSelected] = useState<string[]>([]);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [toastText, setToastText] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const searchInputRef = useRef<TextInput>(null);
+
+  const showToast = useCallback((msg: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToastText(msg);
+    toastTimerRef.current = setTimeout(() => {
+      setToastText(null);
+    }, 2400);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
 
   const selectionMode = selected.length > 0;
   const searchActive = searchFocused || searchQuery.trim().length > 0;
@@ -61,7 +76,12 @@ export default function HomeScreen({ navigation }: Props) {
 
   const visible = useMemo(() => {
     const q = searchQuery.trim().toLocaleLowerCase('tr-TR');
-    let list = filter === 'all' ? notes : notes.filter((n) => n.folderId === filter);
+    let list =
+      filter === 'all'
+        ? notes
+        : filter === 'none'
+          ? notes.filter((n) => n.folderId === null)
+          : notes.filter((n) => n.folderId === filter);
 
     if (q.length > 0) {
       // Arama aktifken tüm notlarda veya seçili klasörde başlık + içerik eşleşmesi
@@ -137,7 +157,7 @@ export default function HomeScreen({ navigation }: Props) {
 
   const doDelete = () => {
     const count = selected.length;
-    Alert.alert('Notları sil', `${count} not kalıcı olarak silinecek.`, [
+    showAlert('Notları sil', `${count} not kalıcı olarak silinecek.`, [
       { text: 'Vazgeç', style: 'cancel' },
       {
         text: 'Sil',
@@ -163,7 +183,9 @@ export default function HomeScreen({ navigation }: Props) {
           <TouchableOpacity onPress={() => setSelected([])} hitSlop={10} style={styles.headerBtn}>
             <Ionicons name="close" size={26} color={theme.text} />
           </TouchableOpacity>
-          <Text style={[styles.selTitle, { color: theme.text, fontFamily: theme.fonts.semiBold }]}>{selected.length} öge seçildi</Text>
+          <Text style={[styles.selTitle, { color: theme.text, fontFamily: theme.fonts.semiBold }]}>
+            {selected.length} öge seçildi
+          </Text>
           <TouchableOpacity
             onPress={() => setSelected(allSelected ? [] : visible.map((n) => n.id))}
             hitSlop={10}
@@ -272,7 +294,7 @@ export default function HomeScreen({ navigation }: Props) {
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={newNote}
-          style={[styles.fab, { backgroundColor: FAB_COLOR, bottom: insets.bottom + 18 }]}
+          style={[styles.fab, { backgroundColor: theme.accent, bottom: insets.bottom + 18 }]}
         >
           <Ionicons name="add" size={35} color="#FFFFFF" />
         </TouchableOpacity>
@@ -286,7 +308,7 @@ export default function HomeScreen({ navigation }: Props) {
             {
               backgroundColor: theme.surface,
               borderTopColor: theme.border,
-              paddingBottom: Math.max(insets.bottom, 8),
+              paddingBottom: 8,
             },
           ]}
         >
@@ -308,7 +330,15 @@ export default function HomeScreen({ navigation }: Props) {
             label="Şuraya taşı"
             color={theme.text}
             theme={theme}
-            onPress={() => setPickerOpen(true)}
+            onPress={() => {
+              setFoldersMoveCallback((_folderId, folderName, count) => {
+                setSelected([]);
+                showToast(`${count} not ${folderName} klasörüne taşındı`);
+              });
+              navigation.navigate('Folders', {
+                moveNoteIds: selected,
+              });
+            }}
           />
           <ActionButton
             icon={<Ionicons name="trash-outline" size={23} color={theme.text} />}
@@ -320,20 +350,24 @@ export default function HomeScreen({ navigation }: Props) {
         </View>
       )}
 
-      <FolderPickerModal
-        visible={pickerOpen}
-        theme={theme}
-        folders={folders}
-        onClose={() => setPickerOpen(false)}
-        onSelect={(folderId) => {
-          moveNotes(selected, folderId);
-          setPickerOpen(false);
-          setSelected([]);
-        }}
-      />
+      {toastText && (
+        <View
+          pointerEvents="none"
+          style={[
+            styles.toastWrap,
+            { bottom: (selectionMode ? 76 : 26) + insets.bottom },
+          ]}
+        >
+          <View style={[styles.toastPill, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Text style={[styles.toastText, { color: theme.text, fontFamily: theme.fonts.regular }]}>
+              {toastText}
+            </Text>
+          </View>
+        </View>
+      )}
 
-      {!selectionMode && insets.bottom > 0 && (
-        <View style={{ height: insets.bottom, backgroundColor: theme.background }} />
+      {insets.bottom > 0 && (
+        <View style={{ height: insets.bottom, backgroundColor: theme.navBar }} />
       )}
     </View>
   );
@@ -366,6 +400,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   selHeader: {
     height: 48,
+    marginTop: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -374,6 +409,7 @@ const styles = StyleSheet.create({
   },
   searchHeader: {
     height: 50,
+    marginTop: 12,
     flexDirection: 'row',
     alignItems: 'center',
     paddingLeft: 12,
@@ -444,4 +480,25 @@ const styles = StyleSheet.create({
   },
   action: { flex: 1, alignItems: 'center', gap: 3, paddingVertical: 2 },
   actionLabel: { fontFamily: fonts.regular, fontSize: 11.5 },
+  toastWrap: {
+    position: 'absolute',
+    left: 24,
+    right: 24,
+    alignItems: 'center',
+  },
+  toastPill: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  toastText: {
+    fontSize: 13.5,
+    textAlign: 'center',
+  },
 });

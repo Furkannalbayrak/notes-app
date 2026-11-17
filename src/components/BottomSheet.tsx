@@ -13,7 +13,7 @@ interface Props {
 export function BottomSheet({ visible, onClose, theme, children }: Props) {
   const insets = useSafeAreaInsets();
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -22,12 +22,15 @@ export function BottomSheet({ visible, onClose, theme, children }: Props) {
         <View
           style={[
             styles.sheet,
-            { backgroundColor: theme.surface, paddingBottom: Math.max(insets.bottom, 12) },
+            { backgroundColor: theme.surface, paddingBottom: 12 },
           ]}
         >
           <View style={[styles.handle, { backgroundColor: theme.checkEmpty }]} />
           {children}
         </View>
+        {insets.bottom > 0 && (
+          <View style={{ height: insets.bottom, backgroundColor: theme.navBar }} />
+        )}
       </KeyboardAvoidingView>
     </Modal>
   );

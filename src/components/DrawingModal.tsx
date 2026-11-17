@@ -132,7 +132,7 @@ export function DrawingModal({ visible, initialStrokes, onSave, onClose }: Props
   const bottomPad = Math.max(insets.bottom, Platform.OS === 'android' ? 28 : 16);
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
       <View style={[styles.container, { paddingTop: topPad }]}>
         {/* Üst Bar */}
         <View style={styles.header}>
@@ -180,7 +180,7 @@ export function DrawingModal({ visible, initialStrokes, onSave, onClose }: Props
           </View>
 
           <TouchableOpacity onPress={handleDone} hitSlop={10} style={styles.iconBtn}>
-            <Ionicons name="checkmark" size={29} color="#F5A623" />
+            <Ionicons name="checkmark" size={29} color={theme.accent} />
           </TouchableOpacity>
         </View>
 
