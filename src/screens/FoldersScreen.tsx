@@ -7,12 +7,11 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   TouchableOpacity,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { Text, TextInput } from '../components/AppText';
 import { showAlert } from '../components/ConfirmModal';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';

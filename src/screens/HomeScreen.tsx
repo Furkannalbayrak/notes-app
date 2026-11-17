@@ -3,12 +3,11 @@ import {
   BackHandler,
   Keyboard,
   StyleSheet,
-  Text,
-  TextInput,
   TouchableOpacity,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { Text, TextInput } from '../components/AppText';
 import { showAlert } from '../components/ConfirmModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -157,7 +156,7 @@ export default function HomeScreen({ navigation }: Props) {
 
   const doDelete = () => {
     const count = selected.length;
-    showAlert('Notları sil', `${count} not kalıcı olarak silinecek.`, [
+    showAlert('Notları sil', `${count} not silinecek.`, [
       { text: 'Vazgeç', style: 'cancel' },
       {
         text: 'Sil',

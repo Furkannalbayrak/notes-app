@@ -10,12 +10,11 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   TouchableOpacity,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { Text, TextInput } from '../components/AppText';
 import { showAlert } from '../components/ConfirmModal';
 import Animated, {
   Easing,
@@ -63,7 +62,7 @@ interface Snapshot {
 
 const HISTORY_LIMIT = 300;
 const COALESCE_MS = 800;
-const AUTOSAVE_MS = 300;
+const AUTOSAVE_MS = 2500;
 const FONT_PRESETS: FontSizePreset[] = ['sm', 'md', 'lg', 'xl'];
 
 function cloneBlocks(blocks: NoteBlock[]): NoteBlock[] {
@@ -89,6 +88,8 @@ export default function EditorScreen({ navigation, route }: Props) {
   const scrollYRef = useRef<number>(0);
   const viewportHRef = useRef<number>(0);
   const savedScrollYRef = useRef<number | null>(null);
+  const contentHeightsRef = useRef<Record<string, number>>({});
+  const blockYMapRef = useRef<Record<string, number>>({});
 
   const focusFirstBlock = useCallback(() => {
     const firstText = blocksRef.current.find((b) => b.type === 'text');
@@ -189,7 +190,8 @@ export default function EditorScreen({ navigation, route }: Props) {
   const folders = useStore((s) => s.folders);
   const appFontSize = useStore((s) => s.fontSize);
   const fontDelta = appFontSize === 'small' ? -2 : appFontSize === 'large' ? 2 : appFontSize === 'huge' ? 4 : 0;
-  const note = useStore((s) => (noteId ? s.notes.find((n) => n.id === noteId) : undefined));
+  const storeIsPinned = useStore((s) => (noteId ? s.notes.find((n) => n.id === noteId)?.isPinned : undefined));
+  const storeFolderId = useStore((s) => (noteId ? s.notes.find((n) => n.id === noteId)?.folderId : undefined));
 
   // Klavye durumu
   useEffect(() => {
@@ -355,6 +357,7 @@ export default function EditorScreen({ navigation, route }: Props) {
   };
 
   const onBlockLayout = (id: string, layout: { y: number; height: number }) => {
+    blockYMapRef.current[id] = layout.y;
     if (pendingFocusIdRef.current !== id) return;
     pendingFocusIdRef.current = null;
 
@@ -431,6 +434,16 @@ export default function EditorScreen({ navigation, route }: Props) {
     // Yeni bloklara AYIRMIYORUZ; böylece kullanıcı klavyedeki sil tuşuna (Backspace)
     // basılı tuttuğunda satır geçişlerinde duraksamadan, tüm metni tek seferde silebilir.
     if (!target.hasCheckbox) {
+      const oldLines = target.text.split('\n').length;
+      const newLines = rawVal.split('\n').length;
+      if (newLines !== oldLines && contentHeightsRef.current[target.id]) {
+        const sizeSpec = FONT_SIZE_MAP[target.fontSize ?? 'md'];
+        const stepH = Math.round((sizeSpec.fontSize + fontDelta) * 1.15 * 1.24);
+        contentHeightsRef.current[target.id] = Math.max(
+          stepH,
+          contentHeightsRef.current[target.id] + (newLines - oldLines) * stepH,
+        );
+      }
       const next = curBlocks.map((b, i) =>
         i === idx && b.type === 'text' ? { ...b, text: rawVal } : b,
       );
@@ -816,9 +829,9 @@ export default function EditorScreen({ navigation, route }: Props) {
     Keyboard.dismiss();
   };
 
-  const isPinned = note ? note.isPinned : pendingPinned;
-  const currentFolder = note ? note.folderId : pendingFolder;
-  const ts = note?.updatedAt ?? initial.current.ts;
+  const isPinned = storeIsPinned !== undefined ? storeIsPinned : pendingPinned;
+  const currentFolder = storeFolderId !== undefined ? storeFolderId : pendingFolder;
+  const ts = initial.current.ts;
   const charCount = title.length + getBlocksCharCount(blocks);
 
   const activeBlock = blocks[Math.min(Math.max(activeBlockIdx, 0), blocks.length - 1)];
@@ -842,7 +855,7 @@ export default function EditorScreen({ navigation, route }: Props) {
 
   const confirmDelete = () => {
     setMenuOpen(false);
-    showAlert('Notu sil', 'Bu not kalıcı olarak silinecek.', [
+    showAlert('Notu sil', 'Bu not silinecek.', [
       { text: 'Vazgeç', style: 'cancel' },
       {
         text: 'Sil',
@@ -946,6 +959,21 @@ export default function EditorScreen({ navigation, route }: Props) {
                 const sizeSpec = FONT_SIZE_MAP[block.fontSize ?? 'md'];
                 const effectiveFontSize = sizeSpec.fontSize + fontDelta;
                 const naturalLineH = Math.round(effectiveFontSize * 1.22);
+                const isLastBlock = idx === blocks.length - 1;
+
+                // Android ReactEditText'te isLayoutRequested() = false olduğu için Enter'a basıldığı
+                // karede (Yoga yüksekliği büyütmeden önce) EditText kendi içinde yukarı scroll (mScrollY > 0)
+                // yapmasın diye son multiline metin bloğunun altında her zaman ekstra iç yükseklik tamponu bırakıyoruz.
+                let inputMinHeight: number | undefined;
+                if (!block.hasCheckbox && isLastBlock) {
+                  const approxLineH = Math.round(effectiveFontSize * 1.15 * 1.24);
+                  const lineCount = block.text.split('\n').length;
+                  const estimatedH = lineCount * approxLineH;
+                  const measuredH = contentHeightsRef.current[block.id] ?? 0;
+                  const baseTextH = Math.max(estimatedH, measuredH);
+                  inputMinHeight = Math.max(220, baseTextH + 120);
+                }
+
                 return (
                   <View
                     key={block.id}
@@ -980,6 +1008,32 @@ export default function EditorScreen({ navigation, route }: Props) {
                       onSelectionChange={(e) => {
                         selectionRef.current[block.id] = e.nativeEvent.selection;
                       }}
+                      onContentSizeChange={(e) => {
+                        const h = Math.ceil(e.nativeEvent.contentSize.height);
+                        const prevH = contentHeightsRef.current[block.id] ?? 0;
+                        contentHeightsRef.current[block.id] = h;
+                        if (
+                          !block.hasCheckbox &&
+                          activeBlockIdx === idx &&
+                          h > prevH &&
+                          prevH > 0 &&
+                          viewportHRef.current > 0
+                        ) {
+                          const sel = selectionRef.current[block.id];
+                          const atEnd = !sel || sel.end >= block.text.length - 2;
+                          if (atEnd) {
+                            const blockY = blockYMapRef.current[block.id] ?? 110;
+                            const textBottom = blockY + h + 28;
+                            const visibleBottom = scrollYRef.current + viewportHRef.current;
+                            if (textBottom > visibleBottom) {
+                              scrollRef.current?.scrollTo({
+                                y: textBottom - viewportHRef.current + 20,
+                                animated: false,
+                              });
+                            }
+                          }
+                        }
+                      }}
                       onFocus={() => {
                         setEditing(true);
                         setActiveBlockIdx(idx);
@@ -995,6 +1049,7 @@ export default function EditorScreen({ navigation, route }: Props) {
                           color: block.checked ? theme.textSecondary : theme.text,
                           fontSize: effectiveFontSize,
                           fontFamily: theme.fonts.regular,
+                          minHeight: inputMinHeight,
                         },
                       ]}
                       selectionColor={theme.accent}
@@ -1005,7 +1060,7 @@ export default function EditorScreen({ navigation, route }: Props) {
 
               if (block.type === 'image') {
                 const ratio = block.aspectRatio && block.aspectRatio > 0 ? block.aspectRatio : 4 / 3;
-                const imgW = width - 36;
+                const imgW = width - 46;
                 const imgH = Math.min(360, Math.round(imgW / ratio));
                 return (
                   <View key={block.id} style={styles.mediaCard}>
@@ -1028,7 +1083,7 @@ export default function EditorScreen({ navigation, route }: Props) {
               if (block.type === 'drawing') {
                 const cw = block.canvasWidth || width;
                 const ch = block.canvasHeight || 320;
-                const cardH = Math.min(280, Math.max(170, Math.round(((width - 36) * ch) / cw)));
+                const cardH = Math.min(280, Math.max(170, Math.round(((width - 46) * ch) / cw)));
                 return (
                   <TouchableOpacity
                     key={block.id}
@@ -1076,12 +1131,35 @@ export default function EditorScreen({ navigation, route }: Props) {
               style={styles.bottomTapArea}
               onPress={() => {
                 const curBlocks = blocksRef.current;
-                for (let i = curBlocks.length - 1; i >= 0; i--) {
-                  if (curBlocks[i].type === 'text') {
-                    setActiveBlockIdx(i);
-                    inputRefs.current[curBlocks[i].id]?.focus();
-                    return;
+                // Kaldığımız (son aktif) metin bloğu; yoksa son metin bloğu
+                let targetIdx = -1;
+                const active = curBlocks[activeBlockIdx];
+                if (active && active.type === 'text') {
+                  targetIdx = activeBlockIdx;
+                } else {
+                  for (let i = curBlocks.length - 1; i >= 0; i--) {
+                    if (curBlocks[i].type === 'text') {
+                      targetIdx = i;
+                      break;
+                    }
                   }
+                }
+                if (targetIdx >= 0) {
+                  const target = curBlocks[targetIdx] as TextBlock;
+                  const el = inputRefs.current[target.id];
+                  const endPos = target.text.length;
+                  setActiveBlockIdx(targetIdx);
+                  selectionRef.current[target.id] = { start: endPos, end: endPos };
+                  if (el) {
+                    // Klavye kapalıyken input odakta kalmış olabilir; önce blur ile sıfırla
+                    // ki focus() klavyeyi tekrar açsın.
+                    el.blur();
+                    requestAnimationFrame(() => {
+                      el.focus();
+                      el.setNativeProps({ selection: { start: endPos, end: endPos } });
+                    });
+                  }
+                  return;
                 }
                 const newText = createTextBlock('');
                 const next = [...curBlocks, newText];
@@ -1335,18 +1413,19 @@ const styles = StyleSheet.create({
   },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
   iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  scroll: { flexGrow: 1, paddingHorizontal: 18 },
+  scroll: { flexGrow: 1, paddingHorizontal: 23 },
   title: {
     fontFamily: fonts.bold,
     fontSize: 24,
     lineHeight: 31,
-    paddingVertical: 4,
+    paddingVertical: 10,
     paddingHorizontal: 0,
   },
-  meta: { fontFamily: fonts.regular, fontSize: 12.5, marginTop: 2, marginBottom: 12 },
+  meta: { fontFamily: fonts.regular, fontSize: 12.5, marginTop: 4, marginBottom: 20 },
   textBlockRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    paddingVertical: 3,
   },
   checkbox: {
     width: 20,

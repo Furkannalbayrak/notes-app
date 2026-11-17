@@ -5,11 +5,11 @@ import {
   ScrollView,
   StyleSheet,
   Switch,
-  Text,
   TouchableOpacity,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { Text } from '../components/AppText';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
