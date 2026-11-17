@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   BackHandler,
   KeyboardAvoidingView,
   Modal,
@@ -14,6 +13,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { showAlert } from '../components/ConfirmModal';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,10 +26,20 @@ import { FolderFilter, RootStackParamList } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Folders'>;
 
-export default function FoldersScreen({ navigation }: Props) {
+type MoveCallback = (folderId: string | null, folderName: string, count: number) => void;
+let pendingMoveCallback: MoveCallback | null = null;
+
+export function setFoldersMoveCallback(cb: MoveCallback | null) {
+  pendingMoveCallback = cb;
+}
+
+export default function FoldersScreen({ navigation, route }: Props) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+
+  const moveNoteIds = route.params?.moveNoteIds;
+  const isMoveMode = Array.isArray(moveNoteIds);
 
   const progress = useSharedValue(0);
   const closingRef = useRef(false);
@@ -77,6 +87,7 @@ export default function FoldersScreen({ navigation }: Props) {
   const addFolder = useStore((s) => s.addFolder);
   const renameFolder = useStore((s) => s.renameFolder);
   const deleteFolders = useStore((s) => s.deleteFolders);
+  const moveNotes = useStore((s) => s.moveNotes);
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -94,7 +105,18 @@ export default function FoldersScreen({ navigation }: Props) {
     return () => sub.remove();
   }, [selectionMode]);
 
-  const selectFilter = (filter: FolderFilter) => {
+  const selectFilter = (filter: FolderFilter, label: string) => {
+    if (isMoveMode) {
+      const targetFolderId = filter === 'none' || filter === 'all' ? null : filter;
+      if (moveNoteIds && moveNoteIds.length > 0) {
+        moveNotes(moveNoteIds, targetFolderId);
+      }
+      const cb = pendingMoveCallback;
+      pendingMoveCallback = null;
+      cb?.(targetFolderId, label, moveNoteIds?.length || 1);
+      navigation.goBack();
+      return;
+    }
     setActiveFilter(filter);
     navigation.goBack();
   };
@@ -129,13 +151,11 @@ export default function FoldersScreen({ navigation }: Props) {
   };
 
   const handleTrashPress = () => {
-    if (folders.length === 0) return;
     if (!selectionMode) {
-      // Silme moduna geç: tüm özel klasörlerden ilkini seç veya seçim modunu başlat
-      setSelectedIds([folders[0].id]);
+      navigation.navigate('Trash');
       return;
     }
-    Alert.alert(
+    showAlert(
       'Klasörleri sil',
       `Seçilen ${selectedIds.length} klasör silinecek. İçindeki notlar silinmez, Kategorilenmemiş olarak kalır.`,
       [
@@ -163,22 +183,22 @@ export default function FoldersScreen({ navigation }: Props) {
     count: number;
     isCustom?: boolean;
   }) => {
-    const isActive = activeFilter === id;
-    const isSelectedForDelete = isCustom && selectedIds.includes(id);
+    const isActive = !isMoveMode && activeFilter === id;
+    const isSelectedForDelete = !isMoveMode && isCustom && selectedIds.includes(id);
 
     return (
       <TouchableOpacity
         key={id}
         activeOpacity={0.75}
         onPress={() => {
-          if (selectionMode) {
+          if (selectionMode && !isMoveMode) {
             if (isCustom) toggleSelect(id);
           } else {
-            selectFilter(id);
+            selectFilter(id, label);
           }
         }}
         onLongPress={() => {
-          if (!isCustom) return;
+          if (isMoveMode || !isCustom) return;
           if (!selectionMode) {
             setSelectedIds([id]);
           } else {
@@ -267,39 +287,47 @@ export default function FoldersScreen({ navigation }: Props) {
         )}
 
         <Text style={[styles.headerTitle, { color: theme.text, fontFamily: theme.fonts.semiBold }]}>
-          {selectionMode ? `${selectedIds.length} klasör seçildi` : 'Klasörler'}
+          {isMoveMode
+            ? 'Klasör seç'
+            : selectionMode
+              ? `${selectedIds.length} klasör seçildi`
+              : 'Klasörler'}
         </Text>
 
-        <TouchableOpacity
-          onPress={handleTrashPress}
-          disabled={folders.length === 0}
-          hitSlop={10}
-          style={styles.iconBtn}
-        >
-          <Ionicons
-            name="trash-outline"
-            size={23}
-            color={
-              folders.length === 0
-                ? theme.textTertiary
-                : selectionMode
-                  ? theme.danger
-                  : theme.text
-            }
-          />
-        </TouchableOpacity>
+        {isMoveMode ? (
+          <View style={styles.iconBtn} />
+        ) : (
+          <TouchableOpacity
+            onPress={handleTrashPress}
+            hitSlop={10}
+            style={styles.iconBtn}
+          >
+            <Ionicons
+              name="trash-outline"
+              size={23}
+              color={selectionMode ? theme.danger : theme.text}
+            />
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 28 }]}
         showsVerticalScrollIndicator={false}
       >
-        {renderFolderCard({ id: 'all', label: 'Tümü', count: notes.length })}
+        {!isMoveMode && renderFolderCard({ id: 'all', label: 'Tümü', count: notes.length })}
 
         {folders.map((f) => {
           const count = notes.filter((n) => n.folderId === f.id).length;
           return renderFolderCard({ id: f.id, label: f.name, count, isCustom: true });
         })}
+
+        {isMoveMode &&
+          renderFolderCard({
+            id: 'none',
+            label: 'Kategorilenmemiş',
+            count: notes.filter((n) => n.folderId === null).length,
+          })}
 
         {/* Yeni Klasör Kartı */}
         <TouchableOpacity
@@ -321,6 +349,7 @@ export default function FoldersScreen({ navigation }: Props) {
         animationType="fade"
         onRequestClose={() => setModalOpen(false)}
         statusBarTranslucent
+        navigationBarTranslucent
       >
         <KeyboardAvoidingView
           style={styles.modalWrap}
@@ -386,7 +415,7 @@ export default function FoldersScreen({ navigation }: Props) {
       </Modal>
 
       {insets.bottom > 0 && (
-        <View style={{ height: insets.bottom, backgroundColor: theme.background }} />
+        <View style={{ height: insets.bottom, backgroundColor: theme.navBar }} />
       )}
       </Animated.View>
     </View>
@@ -397,6 +426,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
     height: 52,
+    marginTop: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
