@@ -1,17 +1,18 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  BackHandler,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { Text } from '../components/AppText';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SEVEN_DAYS_MS, useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { fonts } from '../theme';
@@ -39,8 +40,11 @@ export default function TrashScreen({ navigation }: Props) {
 
   const deletedNotes = useStore((s) => s.deletedNotes);
   const restoreNote = useStore((s) => s.restoreNote);
+  const permanentlyDeleteNote = useStore((s) => s.permanentlyDeleteNote);
   const clearDeletedNotes = useStore((s) => s.clearDeletedNotes);
   const purgeExpiredDeletedNotes = useStore((s) => s.purgeExpiredDeletedNotes);
+
+  const [selected, setSelected] = useState<string[]>([]);
 
   const [toastText, setToastText] = useState<string | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -113,6 +117,55 @@ export default function TrashScreen({ navigation }: Props) {
     );
   };
 
+  const selectionMode = selected.length > 0;
+
+  // Çöpten kaybolan notlar seçili kalmasın
+  useEffect(() => {
+    setSelected((cur) => {
+      const ids = new Set(deletedNotes.map((n) => n.id));
+      const next = cur.filter((id) => ids.has(id));
+      return next.length === cur.length ? cur : next;
+    });
+  }, [deletedNotes]);
+
+  // Donanımsal geri tuşu seçim modunu kapatır
+  useEffect(() => {
+    if (!selectionMode) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setSelected([]);
+      return true;
+    });
+    return () => sub.remove();
+  }, [selectionMode]);
+
+  const toggleSelect = (id: string) => {
+    setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+  };
+
+  const allSelected = deletedNotes.length > 0 && selected.length === deletedNotes.length;
+
+  const doRestore = () => {
+    const count = selected.length;
+    selected.forEach((id) => restoreNote(id));
+    setSelected([]);
+    showToast(`${count} not kategorisiz olarak geri yüklendi`);
+  };
+
+  const doPermanentDelete = () => {
+    const ids = [...selected];
+    showAlert('Kalıcı olarak sil', `${ids.length} not kalıcı olarak silinecek. Bu işlem geri alınamaz.`, [
+      { text: 'Vazgeç', style: 'cancel' },
+      {
+        text: 'Sil',
+        style: 'destructive',
+        onPress: () => {
+          ids.forEach((id) => permanentlyDeleteNote(id));
+          setSelected([]);
+        },
+      },
+    ]);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: 'transparent' }]}>
       <Animated.View
@@ -122,15 +175,33 @@ export default function TrashScreen({ navigation }: Props) {
       <Animated.View style={[{ backgroundColor: theme.background, paddingTop: insets.top }, slideStyle]}>
         {/* Üst Bar */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10} style={styles.iconBtn}>
-            <Ionicons name="arrow-back" size={26} color={theme.text} />
-          </TouchableOpacity>
+          {selectionMode ? (
+            <TouchableOpacity onPress={() => setSelected([])} hitSlop={10} style={styles.iconBtn}>
+              <Ionicons name="close" size={26} color={theme.text} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10} style={styles.iconBtn}>
+              <Ionicons name="arrow-back" size={26} color={theme.text} />
+            </TouchableOpacity>
+          )}
 
           <Text style={[styles.headerTitle, { color: theme.text, fontFamily: theme.fonts.semiBold }]}>
-            Silinmiş öğeler
+            {selectionMode ? `${selected.length} öge seçildi` : 'Silinmiş öğeler'}
           </Text>
 
-          {deletedNotes.length > 0 ? (
+          {selectionMode ? (
+            <TouchableOpacity
+              onPress={() => setSelected(allSelected ? [] : deletedNotes.map((n) => n.id))}
+              hitSlop={10}
+              style={styles.iconBtn}
+            >
+              <MaterialCommunityIcons
+                name={allSelected ? 'checkbox-multiple-marked' : 'checkbox-multiple-marked-outline'}
+                size={24}
+                color={allSelected ? theme.accent : theme.text}
+              />
+            </TouchableOpacity>
+          ) : deletedNotes.length > 0 ? (
             <TouchableOpacity onPress={handleEmptyTrash} hitSlop={10} style={styles.iconBtn}>
               <Ionicons name="trash-outline" size={22} color={theme.danger} />
             </TouchableOpacity>
@@ -158,14 +229,23 @@ export default function TrashScreen({ navigation }: Props) {
             {deletedNotes.map((note) => {
               const plain = getNotePlainText(note.content).trim();
               const hasTitle = note.title.trim().length > 0;
+              const isSel = selected.includes(note.id);
               return (
-                <View
+                <TouchableOpacity
                   key={note.id}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    if (selectionMode) toggleSelect(note.id);
+                  }}
+                  onLongPress={() => {
+                    if (!isSel) setSelected((cur) => [...cur, note.id]);
+                  }}
                   style={[
                     styles.card,
                     {
                       backgroundColor: theme.surface,
-                      borderColor: theme.border,
+                      borderColor: isSel ? theme.accent : theme.border,
+                      borderWidth: isSel ? 1.5 : StyleSheet.hairlineWidth,
                     },
                   ]}
                 >
@@ -213,27 +293,49 @@ export default function TrashScreen({ navigation }: Props) {
                     </Text>
                   </View>
 
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => {
-                      restoreNote(note.id);
-                      showToast('Not kategorisiz olarak geri yüklendi');
-                    }}
-                    hitSlop={8}
-                    style={[styles.restoreBtn, { backgroundColor: theme.accentSoft }]}
-                  >
-                    <Ionicons name="refresh" size={21} color={theme.accent} />
-                  </TouchableOpacity>
-                </View>
+                  {selectionMode && (
+                    <View
+                      style={[
+                        styles.check,
+                        { backgroundColor: isSel ? theme.accent : theme.checkEmpty },
+                      ]}
+                    >
+                      {isSel && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                    </View>
+                  )}
+                </TouchableOpacity>
               );
             })}
           </ScrollView>
         )}
 
+        {/* Alt aksiyon paneli */}
+        {selectionMode && (
+          <View
+            style={[
+              styles.actionBar,
+              { backgroundColor: theme.surface, borderTopColor: theme.border },
+            ]}
+          >
+            <TouchableOpacity style={styles.action} activeOpacity={0.6} onPress={doRestore}>
+              <Ionicons name="refresh" size={23} color={theme.text} />
+              <Text style={[styles.actionLabel, { color: theme.text, fontFamily: theme.fonts.regular }]}>
+                Geri dönüştür
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.action} activeOpacity={0.6} onPress={doPermanentDelete}>
+              <Ionicons name="trash-outline" size={23} color={theme.danger} />
+              <Text style={[styles.actionLabel, { color: theme.danger, fontFamily: theme.fonts.regular }]}>
+                Sil
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {toastText && (
           <View
             pointerEvents="none"
-            style={[styles.toastWrap, { bottom: insets.bottom + 26 }]}
+            style={[styles.toastWrap, { bottom: insets.bottom + (selectionMode ? 76 : 26) }]}
           >
             <View style={[styles.toastPill, { backgroundColor: theme.surface, borderColor: theme.border }]}>
               <Text style={[styles.toastText, { color: theme.text, fontFamily: theme.fonts.regular }]}>
@@ -309,13 +411,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  restoreBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  check: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  actionBar: {
+    flexDirection: 'row',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  action: { flex: 1, alignItems: 'center', gap: 3, paddingVertical: 2 },
+  actionLabel: { fontSize: 11.5 },
   toastWrap: {
     position: 'absolute',
     left: 24,
