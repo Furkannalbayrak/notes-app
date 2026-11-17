@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Notlar",
+    "name": "Not",
     "slug": "notes-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -11,18 +11,15 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.furkan.notes",
       "backgroundColor": "#000000",
       "adaptiveIcon": {
-        "backgroundColor": "#000000",
+        "backgroundColor": "#FFCE5F",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
-    },
-    "androidNavigationBar": {
-      "backgroundColor": "#000000",
-      "barStyle": "light-content"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -30,7 +27,22 @@
     "plugins": [
       "expo-font",
       "expo-splash-screen",
-      "expo-status-bar"
-    ]
+      "expo-status-bar",
+      [
+        "expo-navigation-bar",
+        {
+          "enforceContrast": false
+        }
+      ]
+    ],
+    "extra": {
+      "expo-navigation-bar": {
+        "enforceContrast": false
+      },
+      "eas": {
+        "projectId": "1576be9e-836e-495b-8434-71818165fb46"
+      }
+    },
+    "owner": "furkanalbayrak"
   }
 }
