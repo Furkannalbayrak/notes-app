@@ -1,5 +1,6 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Text } from './AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { Folder, FolderFilter } from '../types';
 import { Theme, fonts } from '../theme';
@@ -62,10 +63,10 @@ export function FolderBar({ theme, folders, active, onChange, onManage }: Props)
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', paddingRight: 12, marginBottom: 10 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingRight: 12, marginBottom: 12, marginTop: 4 },
   flex: { flex: 1 },
   scroll: { paddingLeft: 12, paddingRight: 8, gap: 8, alignItems: 'center' },
-  pill: { height: 34, paddingHorizontal: 14, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  pill: { height: 42, paddingHorizontal: 16, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   pillText: { fontFamily: fonts.regular, fontSize: 14 },
-  manage: { width: 38, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  manage: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
 });

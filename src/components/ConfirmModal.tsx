@@ -3,10 +3,10 @@ import {
   Modal,
   Pressable,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Text } from './AppText';
 import { useTheme } from '../theme';
 
 export interface AlertButton {

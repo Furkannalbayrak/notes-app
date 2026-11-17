@@ -1,12 +1,13 @@
 import React from 'react';
-import { StyleSheet, Text, TextStyle, View } from 'react-native';
+import { StyleSheet, TextStyle, View } from 'react-native';
+import { Text } from './AppText';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppFontSize, LayoutMode, Note, SortOrder } from '../types';
 import { Theme, fonts } from '../theme';
 import { formatSmartDate } from '../utils/date';
 import { getNotePlainText } from '../utils/blocks';
 
-export const CARD_HEIGHT = 172;
+export const CARD_HEIGHT = 146;
 export const LIST_CARD_HEIGHT = 114;
 export const CARD_GAP = 10;
 const HIGHLIGHT_COLOR = '#E05246';
@@ -108,7 +109,7 @@ export const NoteCard = React.memo(function NoteCard({
   const delta = FONT_DELTA[fontSize] ?? 0;
   const plainContent = getNotePlainText(note.content);
   const hasTitle = note.title.trim().length > 0;
-  const maxContentLines = isList ? (hasTitle ? 1 : 2) : hasTitle ? 3 : 4;
+  const maxContentLines = isList ? (hasTitle ? 1 : 2) : hasTitle ? 2 : 3;
   const cleanContent = formatPreviewContent(plainContent, maxContentLines);
   const displayTimestamp = sortBy === 'createdAt' ? note.createdAt : note.updatedAt;
 
@@ -118,7 +119,7 @@ export const NoteCard = React.memo(function NoteCard({
         styles.card,
         {
           height: isList ? LIST_CARD_HEIGHT : CARD_HEIGHT,
-          backgroundColor: theme.surface,
+          backgroundColor: theme.mode === 'dark' ? '#262628' : theme.surface,
           borderColor: selected ? theme.accent : 'transparent',
         },
       ]}
