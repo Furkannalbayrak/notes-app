@@ -25,6 +25,10 @@ export interface Note {
   updatedAt: number;
 }
 
+export interface DeletedNote extends Note {
+  deletedAt: number;
+}
+
 export type ThemeMode = 'dark' | 'light';
 
 export type AppFontSize = 'small' | 'medium' | 'large' | 'huge';
@@ -34,9 +38,19 @@ export type AppFontFamily =
   | 'roboto'
   | 'poppins'
   | 'nunito'
+  | 'montserrat'
+  | 'opensans'
+  | 'quicksand'
+  | 'raleway'
+  | 'comfortaa'
+  | 'spacegrotesk'
+  | 'oswald'
   | 'lora'
+  | 'merriweather'
+  | 'crimsonpro'
   | 'playfair'
   | 'caveat'
+  | 'dancingscript'
   | 'jetbrains';
 
 export type SortOrder = 'updatedAt' | 'createdAt';
@@ -56,6 +70,11 @@ export type RootStackParamList = {
     originY?: number;
   };
   Settings: undefined;
-  Folders: undefined;
+  Folders:
+    | {
+        moveNoteIds?: string[];
+      }
+    | undefined;
+  Trash: undefined;
   Calendar: undefined;
 };
