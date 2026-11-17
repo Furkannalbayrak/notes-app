@@ -17,13 +17,13 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
-import { Theme, fonts } from '../theme';
+import { ACCENT_COLORS, Theme, fonts } from '../theme';
 import { FONT_CONFIGS } from '../theme/fonts';
 import { AppFontFamily, AppFontSize, LayoutMode, RootStackParamList, SortOrder } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
-type PickerType = 'fontSize' | 'fontFamily' | 'sortBy' | 'layoutMode' | null;
+type PickerType = 'fontSize' | 'fontFamily' | 'accentColor' | 'sortBy' | 'layoutMode' | null;
 
 const FONT_SIZE_LABELS: Record<AppFontSize, string> = {
   small: 'Küçük',
@@ -65,11 +65,13 @@ function Section({
 function StyleRow({
   label,
   valueText,
+  colorSwatch,
   theme,
   onPress,
 }: {
   label: string;
   valueText: string;
+  colorSwatch?: string;
   theme: Theme;
   onPress: () => void;
 }) {
@@ -77,7 +79,16 @@ function StyleRow({
     <TouchableOpacity activeOpacity={0.6} onPress={onPress} style={styles.styleRow}>
       <Text style={[styles.rowLabel, { color: theme.text, fontFamily: theme.fonts.semiBold }]}>{label}</Text>
       <View style={styles.rowRight}>
-        <Text style={[styles.rowValue, { color: theme.textSecondary, fontFamily: theme.fonts.regular }]}>{valueText}</Text>
+        {colorSwatch ? (
+          <View style={[styles.rowColorDot, { backgroundColor: colorSwatch }]} />
+        ) : null}
+        <Text
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          style={[styles.rowValue, { color: theme.textSecondary, fontFamily: theme.fonts.regular }]}
+        >
+          {valueText}
+        </Text>
         <Ionicons name="chevron-expand" size={17} color={theme.textTertiary} />
       </View>
     </TouchableOpacity>
@@ -92,12 +103,14 @@ export default function SettingsScreen({ navigation }: Props) {
   const mode = useStore((s) => s.theme);
   const fontSize = useStore((s) => s.fontSize);
   const fontFamily = useStore((s) => s.fontFamily);
+  const accentColor = useStore((s) => s.accentColor);
   const sortBy = useStore((s) => s.sortBy);
   const layoutMode = useStore((s) => s.layoutMode);
 
   const setTheme = useStore((s) => s.setTheme);
   const setFontSize = useStore((s) => s.setFontSize);
   const setFontFamily = useStore((s) => s.setFontFamily);
+  const setAccentColor = useStore((s) => s.setAccentColor);
   const setSortBy = useStore((s) => s.setSortBy);
   const setLayoutMode = useStore((s) => s.setLayoutMode);
 
@@ -150,46 +163,101 @@ export default function SettingsScreen({ navigation }: Props) {
         'roboto',
         'poppins',
         'nunito',
+        'montserrat',
+        'opensans',
+        'quicksand',
+        'raleway',
+        'comfortaa',
+        'spacegrotesk',
+        'oswald',
         'lora',
+        'merriweather',
+        'crimsonpro',
         'playfair',
         'caveat',
+        'dancingscript',
         'jetbrains',
       ];
       return (
         <>
           <Text style={[styles.modalTitle, { color: theme.text, fontFamily: theme.fonts.bold }]}>Yazı tipi</Text>
-          {options.map((opt) => {
-            const cfg = FONT_CONFIGS[opt];
-            const selected = fontFamily === opt;
-            return (
-              <TouchableOpacity
-                key={opt}
-                activeOpacity={0.65}
-                onPress={() => {
-                  setFontFamily(opt);
-                  setActivePicker(null);
-                }}
-                style={[
-                  styles.optionRow,
-                  selected && { backgroundColor: isDark ? 'rgba(245,166,35,0.14)' : 'rgba(245,166,35,0.12)' },
-                ]}
-              >
-                <Text
+          <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+            {options.map((opt) => {
+              const cfg = FONT_CONFIGS[opt];
+              const selected = fontFamily === opt;
+              return (
+                <TouchableOpacity
+                  key={opt}
+                  activeOpacity={0.65}
+                  onPress={() => {
+                    setFontFamily(opt);
+                    setActivePicker(null);
+                  }}
                   style={[
-                    styles.optionLabel,
-                    {
-                      color: selected ? theme.accent : theme.text,
-                      fontFamily: cfg.regular,
-                      fontSize: opt === 'caveat' ? 18.5 : 15.5,
-                    },
+                    styles.optionRow,
+                    selected && { backgroundColor: theme.accentSoft },
                   ]}
                 >
-                  {cfg.label}
-                </Text>
-                {selected && <Ionicons name="checkmark" size={20} color={theme.accent} />}
-              </TouchableOpacity>
-            );
-          })}
+                  <Text
+                    style={[
+                      styles.optionLabel,
+                      {
+                        color: selected ? theme.accent : theme.text,
+                        fontFamily: cfg.regular,
+                        fontSize: opt === 'caveat' || opt === 'dancingscript' ? 18.5 : 15.5,
+                      },
+                    ]}
+                  >
+                    {cfg.label}
+                  </Text>
+                  {selected && <Ionicons name="checkmark" size={20} color={theme.accent} />}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </>
+      );
+    }
+
+    if (activePicker === 'accentColor') {
+      return (
+        <>
+          <Text style={[styles.modalTitle, { color: theme.text, fontFamily: theme.fonts.bold }]}>Tema rengi</Text>
+          <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+            {ACCENT_COLORS.map((item) => {
+              const selected = accentColor.toUpperCase() === item.hex.toUpperCase();
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  activeOpacity={0.65}
+                  onPress={() => {
+                    setAccentColor(item.hex);
+                    setActivePicker(null);
+                  }}
+                  style={[
+                    styles.optionRow,
+                    selected && { backgroundColor: theme.accentSoft },
+                  ]}
+                >
+                  <View style={styles.colorOptionLeft}>
+                    <View style={[styles.colorOptionDot, { backgroundColor: item.hex }]} />
+                    <Text
+                      style={[
+                        styles.optionLabel,
+                        {
+                          color: selected ? item.hex : theme.text,
+                          fontFamily: selected ? theme.fonts.semiBold : theme.fonts.regular,
+                        },
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                  </View>
+                  {selected && <Ionicons name="checkmark" size={20} color={item.hex} />}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         </>
       );
     }
@@ -198,7 +266,7 @@ export default function SettingsScreen({ navigation }: Props) {
       const options: AppFontSize[] = ['small', 'medium', 'large', 'huge'];
       return (
         <>
-          <Text style={[styles.modalTitle, { color: theme.text }]}>Yazı tipi boyutu</Text>
+          <Text style={[styles.modalTitle, { color: theme.text, fontFamily: theme.fonts.bold }]}>Yazı tipi boyutu</Text>
           {options.map((opt) => {
             const selected = fontSize === opt;
             return (
@@ -211,13 +279,13 @@ export default function SettingsScreen({ navigation }: Props) {
                 }}
                 style={[
                   styles.optionRow,
-                  selected && { backgroundColor: isDark ? 'rgba(245,166,35,0.14)' : 'rgba(245,166,35,0.12)' },
+                  selected && { backgroundColor: theme.accentSoft },
                 ]}
               >
                 <Text
                   style={[
                     styles.optionLabel,
-                    { color: selected ? theme.accent : theme.text, fontFamily: selected ? fonts.semiBold : fonts.regular },
+                    { color: selected ? theme.accent : theme.text, fontFamily: selected ? theme.fonts.semiBold : theme.fonts.regular },
                   ]}
                 >
                   {FONT_SIZE_LABELS[opt]}
@@ -234,7 +302,7 @@ export default function SettingsScreen({ navigation }: Props) {
       const options: SortOrder[] = ['updatedAt', 'createdAt'];
       return (
         <>
-          <Text style={[styles.modalTitle, { color: theme.text }]}>Sırala</Text>
+          <Text style={[styles.modalTitle, { color: theme.text, fontFamily: theme.fonts.bold }]}>Sırala</Text>
           {options.map((opt) => {
             const selected = sortBy === opt;
             return (
@@ -247,13 +315,13 @@ export default function SettingsScreen({ navigation }: Props) {
                 }}
                 style={[
                   styles.optionRow,
-                  selected && { backgroundColor: isDark ? 'rgba(245,166,35,0.14)' : 'rgba(245,166,35,0.12)' },
+                  selected && { backgroundColor: theme.accentSoft },
                 ]}
               >
                 <Text
                   style={[
                     styles.optionLabel,
-                    { color: selected ? theme.accent : theme.text, fontFamily: selected ? fonts.semiBold : fonts.regular },
+                    { color: selected ? theme.accent : theme.text, fontFamily: selected ? theme.fonts.semiBold : theme.fonts.regular },
                   ]}
                 >
                   {SORT_LABELS[opt]}
@@ -270,7 +338,7 @@ export default function SettingsScreen({ navigation }: Props) {
       const options: LayoutMode[] = ['grid', 'list'];
       return (
         <>
-          <Text style={[styles.modalTitle, { color: theme.text }]}>Düzen</Text>
+          <Text style={[styles.modalTitle, { color: theme.text, fontFamily: theme.fonts.bold }]}>Düzen</Text>
           {options.map((opt) => {
             const selected = layoutMode === opt;
             return (
@@ -283,13 +351,13 @@ export default function SettingsScreen({ navigation }: Props) {
                 }}
                 style={[
                   styles.optionRow,
-                  selected && { backgroundColor: isDark ? 'rgba(245,166,35,0.14)' : 'rgba(245,166,35,0.12)' },
+                  selected && { backgroundColor: theme.accentSoft },
                 ]}
               >
                 <Text
                   style={[
                     styles.optionLabel,
-                    { color: selected ? theme.accent : theme.text, fontFamily: selected ? fonts.semiBold : fonts.regular },
+                    { color: selected ? theme.accent : theme.text, fontFamily: selected ? theme.fonts.semiBold : theme.fonts.regular },
                   ]}
                 >
                   {LAYOUT_LABELS[opt]}
@@ -335,6 +403,16 @@ export default function SettingsScreen({ navigation }: Props) {
               onPress={() => setActivePicker('fontSize')}
             />
             <StyleRow
+              label="Tema rengi"
+              valueText={
+                ACCENT_COLORS.find((c) => c.hex.toUpperCase() === accentColor.toUpperCase())?.label ??
+                'Kehribar Turuncu (Varsayılan)'
+              }
+              colorSwatch={theme.accent}
+              theme={theme}
+              onPress={() => setActivePicker('accentColor')}
+            />
+            <StyleRow
               label="Sırala"
               valueText={SORT_LABELS[sortBy]}
               theme={theme}
@@ -354,7 +432,7 @@ export default function SettingsScreen({ navigation }: Props) {
               onPress={() => setTheme(isDark ? 'light' : 'dark')}
               style={styles.styleRow}
             >
-              <Text style={[styles.rowLabel, { color: theme.text }]}>
+              <Text style={[styles.rowLabel, { color: theme.text, fontFamily: theme.fonts.semiBold }]}>
                 {isDark ? 'Koyu Tema' : 'Açık Tema'}
               </Text>
               <Switch
@@ -374,6 +452,7 @@ export default function SettingsScreen({ navigation }: Props) {
           animationType="fade"
           onRequestClose={() => setActivePicker(null)}
           statusBarTranslucent
+          navigationBarTranslucent
         >
           <Pressable style={styles.modalBackdrop} onPress={() => setActivePicker(null)}>
             <Pressable
@@ -389,7 +468,7 @@ export default function SettingsScreen({ navigation }: Props) {
         </Modal>
 
         {insets.bottom > 0 && (
-          <View style={{ height: insets.bottom, backgroundColor: theme.background }} />
+          <View style={{ height: insets.bottom, backgroundColor: theme.navBar }} />
         )}
       </Animated.View>
     </View>
@@ -440,11 +519,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     flex: 1,
     gap: 6,
+    marginLeft: 8,
   },
   rowValue: {
     fontFamily: fonts.regular,
     fontSize: 14.5,
     textAlign: 'right',
+    flexShrink: 1,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
@@ -484,5 +565,23 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     fontSize: 15.5,
+  },
+  rowColorDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginRight: 2,
+    flexShrink: 0,
+  },
+  colorOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  colorOptionDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
   },
 });
